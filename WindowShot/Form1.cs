@@ -1,4 +1,4 @@
-﻿using AForge.Video.FFMPEG;
+﻿using Accord.Video.FFMPEG;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -112,11 +112,11 @@ namespace WindowShot
 
             if (chkIsTimeLapse.Checked)
             {
-                timer1.Interval = 1000;
+                timer1.Interval = 100;
             }
             else
             {
-                timer1.Interval = 10;
+                timer1.Interval = 50;
             }
 
             timer1.Enabled = true;
@@ -139,7 +139,7 @@ namespace WindowShot
         private void WriteVideoFrame(string processName)
         {
 
-            using (var bitmap = CaptureWindowUsingPrintWindow(chkCaptureTitlebar.Checked))
+            using (var bitmap = CaptureWindowUsingBitBlt(chkCaptureTitlebar.Checked))
             {
                 if (!_videoWriter.IsOpen)
                 {
@@ -204,18 +204,18 @@ namespace WindowShot
             return bitmap;
         }
 
-        public Bitmap CaptureWindowUsingBitBlt(IntPtr hWnd, Rectangle wndRect)
+        public Bitmap CaptureWindowUsingBitBlt(bool captureTitlebar)
         {
-            IntPtr hWndDc = Win32.GetDC(hWnd);
+            IntPtr hWndDc = Win32.GetDC(_targetWindowHandle);
             IntPtr hMemDc = Win32.CreateCompatibleDC(hWndDc);
-            IntPtr hBitmap = Win32.CreateCompatibleBitmap(hWndDc, wndRect.Width, wndRect.Height);
+            IntPtr hBitmap = Win32.CreateCompatibleBitmap(hWndDc, _targetWindowRectangle.Right, _targetWindowRectangle.Bottom);
             Win32.SelectObject(hMemDc, hBitmap);
 
-            Win32.BitBlt(hMemDc, 0, 0, wndRect.Width, wndRect.Height, hWndDc, 0, 0, Win32.TernaryRasterOperations.SRCCOPY | Win32.TernaryRasterOperations.CAPTUREBLT);
+            Win32.BitBlt(hMemDc, 0, 0, _targetWindowRectangle.Right, _targetWindowRectangle.Bottom, hWndDc, 0, 0, Win32.TernaryRasterOperations.SRCCOPY | Win32.TernaryRasterOperations.CAPTUREBLT);
             var bitmap = Bitmap.FromHbitmap(hBitmap);
 
             Win32.DeleteObject(hBitmap);
-            Win32.ReleaseDC(hWnd, hWndDc);
+            Win32.ReleaseDC(_targetWindowHandle, hWndDc);
             //ReleaseDC(IntPtr.Zero, hMemDc);
             //var retVal = DeleteObject(hMemDc);
             var retVal2 = Win32.DeleteDC(hMemDc);
@@ -252,6 +252,11 @@ namespace WindowShot
             var scalingFactor = Math.Round(Decimal.Divide(dm.dmPelsWidth, screen.Bounds.Width), 2);
 
             return scalingFactor;
+        }
+
+        private void chkIsTimeLapse_CheckedChanged(object sender, EventArgs e)
+        {
+
         }
     }
 
